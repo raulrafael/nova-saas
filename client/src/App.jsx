@@ -168,6 +168,7 @@ import EggCosteoPorLibra from './pages/EggIndustrial/CosteoPorLibra';
 import EggTraceability from './pages/EggIndustrial/Traceability';
 import EggConfig from './pages/EggIndustrial/Config';
 import EggProductionCalendar from './pages/EggIndustrial/ProductionCalendar';
+import EggDispatch from './pages/EggIndustrial/EggDispatch';
 
 // CRM Pages
 import CustomerAgreements from './pages/CRM/CustomerAgreements';
@@ -390,6 +391,7 @@ function App() {
                         <Route path="/industrial/recepcion" element={<EggReception />} />
                         <Route path="/industrial/produccion" element={<EggProduction />} />
                         <Route path="/industrial/calendario" element={<EggProductionCalendar />} />
+                        <Route path="/industrial/despachos" element={<EggDispatch />} />
                         <Route path="/industrial/empaque" element={<EggPackaging />} />
                         <Route path="/industrial/costos-mantenimiento" element={<EggCostsMaintenance />} />
                         <Route path="/industrial/costeo-libra" element={<EggCosteoPorLibra />} />

@@ -3435,16 +3435,32 @@ const convertLotToJulian = async (req, res) => {
 // 19.9 Gestión de Pedidos de Clientes (Ovoproductos)
 const getEggCustomerOrders = async (req, res) => {
     try {
-        const { status } = req.query;
+        const { status, delivery_status, unassigned_only, fecha_desde, fecha_hasta } = req.query;
         const company_id = req.company_id || req.user?.company_id;
         let sql = `
             SELECT o.*, 
                    c.nombre as customer_registered_name, 
                    c.nombre_comercial as customer_commercial_name,
                    c.nit as customer_nit, 
-                   c.nrc as customer_nrc
+                   c.nrc as customer_nrc,
+                   c.telefono as customer_phone,
+                   cb.nombre as branch_name,
+                   cb.direccion as branch_address,
+                   cb.departamento as branch_departamento,
+                   cb.municipio as branch_municipio,
+                   cb.contacto_nombre as branch_contact_person,
+                   cb.contacto_telefono as branch_contact_phone,
+                   cb.latitude as branch_latitude,
+                   cb.longitude as branch_longitude,
+                   cb.indicaciones_entrega as branch_delivery_notes,
+                   r.codigo_ruta,
+                   r.driver_name as route_driver_name,
+                   r.fecha_despacho as route_date,
+                   r.estado as route_estado
             FROM egg_customer_orders o
             LEFT JOIN customers c ON o.customer_id = c.id
+            LEFT JOIN customer_branches cb ON o.customer_branch_id = cb.id
+            LEFT JOIN egg_dispatch_routes r ON o.dispatch_route_id = r.id
             WHERE o.company_id = ?
         `;
         const params = [company_id];
@@ -3452,6 +3468,25 @@ const getEggCustomerOrders = async (req, res) => {
         if (status) {
             sql += ' AND o.status = ?';
             params.push(status);
+        }
+
+        if (delivery_status) {
+            sql += ' AND o.delivery_status = ?';
+            params.push(delivery_status);
+        }
+
+        if (unassigned_only === 'true' || unassigned_only === '1') {
+            sql += ' AND o.dispatch_route_id IS NULL AND o.delivery_status != "entregado"';
+        }
+
+        if (fecha_desde) {
+            sql += ' AND o.required_delivery_date >= ?';
+            params.push(fecha_desde);
+        }
+
+        if (fecha_hasta) {
+            sql += ' AND o.required_delivery_date <= ?';
+            params.push(fecha_hasta);
         }
 
         sql += ' ORDER BY o.required_delivery_date ASC, o.created_at DESC';
@@ -3468,6 +3503,7 @@ const saveEggCustomerOrder = async (req, res) => {
         const { id } = req.params;
         const {
             customer_id,
+            customer_branch_id,
             customer_name,
             order_number,
             product_type,
@@ -3475,6 +3511,7 @@ const saveEggCustomerOrder = async (req, res) => {
             quantity_lbs,
             required_delivery_date,
             status,
+            priority,
             price_per_lb,
             notes
         } = req.body;
@@ -3516,6 +3553,18 @@ const saveEggCustomerOrder = async (req, res) => {
             resolvedCustomerName = cCheck[0].nombre;
         }
 
+        // Validar sucursal si se especificó
+        let resolvedBranchId = customer_branch_id ? parseInt(customer_branch_id) : null;
+        if (resolvedBranchId) {
+            const [bCheck] = await pool.query(
+                'SELECT id FROM customer_branches WHERE id = ? AND customer_id = ? AND company_id = ?',
+                [resolvedBranchId, resolvedCustomerId, company_id]
+            );
+            if (bCheck.length === 0) {
+                resolvedBranchId = null;
+            }
+        }
+
         // 2. Si el precio acordado no se ingresó manualmente (> 0), jalarlo automáticamente desde el CRM
         let finalPrice = parseFloat(price_per_lb) || 0;
         if (finalPrice <= 0 && resolvedCustomerId) {
@@ -3541,14 +3590,14 @@ const saveEggCustomerOrder = async (req, res) => {
         if (id) {
             await pool.query(
                 `UPDATE egg_customer_orders SET
-                    customer_id = ?, customer_name = ?, order_number = ?, product_type = ?,
+                    customer_id = ?, customer_branch_id = ?, customer_name = ?, order_number = ?, product_type = ?,
                     presentation = ?, quantity_lbs = ?, required_delivery_date = ?,
-                    status = ?, price_per_lb = ?, notes = ?
+                    status = ?, priority = ?, price_per_lb = ?, notes = ?
                  WHERE id = ? AND company_id = ?`,
                 [
-                    resolvedCustomerId, resolvedCustomerName, order_number || null, product_type,
+                    resolvedCustomerId, resolvedBranchId, resolvedCustomerName, order_number || null, product_type,
                     presentation || 'cubeta 30LB', parseFloat(quantity_lbs) || 0,
-                    required_delivery_date, status || 'pendiente', finalPrice,
+                    required_delivery_date, status || 'pendiente', priority || 'normal', finalPrice,
                     notes || null, id, company_id
                 ]
             );
@@ -3556,13 +3605,13 @@ const saveEggCustomerOrder = async (req, res) => {
         } else {
             const [result] = await pool.query(
                 `INSERT INTO egg_customer_orders (
-                    company_id, customer_id, customer_name, order_number, product_type,
-                    presentation, quantity_lbs, required_delivery_date, status, price_per_lb, notes
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    company_id, customer_id, customer_branch_id, customer_name, order_number, product_type,
+                    presentation, quantity_lbs, required_delivery_date, status, priority, price_per_lb, notes
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
-                    company_id, resolvedCustomerId, resolvedCustomerName, order_number || null, product_type,
+                    company_id, resolvedCustomerId, resolvedBranchId, resolvedCustomerName, order_number || null, product_type,
                     presentation || 'cubeta 30LB', parseFloat(quantity_lbs) || 0,
-                    required_delivery_date, status || 'pendiente', finalPrice,
+                    required_delivery_date, status || 'pendiente', priority || 'normal', finalPrice,
                     notes || null
                 ]
             );

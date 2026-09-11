@@ -148,4 +148,36 @@ router.delete('/orders/:id', eggController.deleteEggCustomerOrder);
 // 21. Usuarios de Planta para Roles
 router.get('/factory-users', eggController.getFactoryUsers);
 
+// 22. Despachos, Rutas, Flota y Mantenimientos de Vehículos
+const eggDispatchController = require('../controllers/eggDispatch.controller');
+
+// 22.1 Flota de Vehículos
+router.get('/dispatch/vehicles', eggDispatchController.getVehicles);
+router.post('/dispatch/vehicles', eggDispatchController.saveVehicle);
+router.put('/dispatch/vehicles/:id', eggDispatchController.saveVehicle);
+router.delete('/dispatch/vehicles/:id', eggDispatchController.deleteVehicle);
+
+// 22.2 Mantenimiento de Vehículos
+router.get('/dispatch/maintenance', eggDispatchController.getMaintenanceLogs);
+router.post('/dispatch/maintenance', eggDispatchController.saveMaintenanceLog);
+router.put('/dispatch/maintenance/:id', eggDispatchController.saveMaintenanceLog);
+router.delete('/dispatch/maintenance/:id', eggDispatchController.deleteMaintenanceLog);
+
+// 22.3 Rutas de Despacho y Paradas
+router.get('/dispatch/routes', eggDispatchController.getDispatchRoutes);
+router.get('/dispatch/routes/:id', eggDispatchController.getDispatchRouteDetail);
+router.post('/dispatch/routes', eggDispatchController.saveDispatchRoute);
+router.put('/dispatch/routes/:id', eggDispatchController.saveDispatchRoute);
+router.delete('/dispatch/routes/:id', eggDispatchController.deleteDispatchRoute);
+router.put('/dispatch/routes/:id/reorder', eggDispatchController.reorderRouteStops);
+router.post('/dispatch/routes/:id/optimize', eggDispatchController.optimizeRouteStops);
+
+// 22.4 Modo Motorista, DTE y Confirmación de Entregas con GPS
+router.get('/dispatch/my-routes', eggDispatchController.getMyDriverRoutes);
+router.get('/dispatch/search-dte-orders', eggDispatchController.searchDteOrActiveOrders);
+router.post('/dispatch/stops/:stop_id/confirm', eggDispatchController.confirmStopDelivery);
+router.put('/dispatch/branches/:branch_id/location', eggDispatchController.updateCustomerBranchLocation);
+router.get('/dispatch/customer-branches', eggDispatchController.getCustomerBranches);
+
 module.exports = router;
+

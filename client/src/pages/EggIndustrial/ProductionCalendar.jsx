@@ -33,8 +33,10 @@ import {
     CheckSquare,
     Check,
     AlertCircle,
-    Building2
+    Building2,
+    Truck
 } from 'lucide-react';
+
 import {
     getJulianDayInfo,
     generateJulianLotCode,
@@ -1062,6 +1064,18 @@ const ProductionCalendar = () => {
                                 </span>
                             )}
                         </button>
+
+                        {/* Botón Despachos y Rutas */}
+                        <button
+                            type="button"
+                            onClick={() => navigate('/industrial/despachos')}
+                            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-slate-800 text-white text-xs font-bold shadow-md hover:brightness-110 active:scale-95 transition-all"
+                        >
+                            <Truck className="w-4 h-4 text-indigo-200" />
+                            <span className="hidden sm:inline">Despachos y Rutas</span>
+                            <span className="sm:hidden">Despachos</span>
+                        </button>
+
 
                         {/* Botón Planificador de Materia Prima (MRP) */}
                         <button

@@ -141,6 +141,21 @@ function buildTree(items) {
         });
     }
 
+    // Asegurar submenú Despachos y Rutas en Huevo Industrial
+    if (industrialRoot && !industrialRoot.children.some(c => c.path === '/industrial/despachos')) {
+        industrialRoot.children.splice(4, 0, {
+            id: 'virtual-industrial-dispatch',
+            label: 'Despachos y Rutas',
+            path: '/industrial/despachos',
+            permission: 'manage_production',
+            permission_key: 'manage_production',
+            hideInMenu: false,
+            icon: iconMap.Truck || iconMap.Circle,
+            children: []
+        });
+    }
+
+
     // Asegurar reportes de inventario (Valorización y Rotación)
     const invReportsNode = Object.values(itemMap).find(i => 
         (i.id === 60 || i.id === 'inventory-reports') ||
